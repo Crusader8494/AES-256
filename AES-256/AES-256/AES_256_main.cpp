@@ -263,50 +263,101 @@ void AES::MixColumns(bool forwardInverse)
 
 uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 {
-	uint16_t tempVal = static_cast<uint16_t>(stateValue);
-	uint16_t tempMult = static_cast<uint16_t>(multiplier);
+	uint32_t tempVal = static_cast<uint32_t>(stateValue);
+	uint32_t tempMult = static_cast<uint32_t>(multiplier);
 
-	uint16_t origTempVal = 0x0000;
+	uint32_t tempValArray[7] = {0,0,0,0,0,0,0};
 
-	if (tempMult == 0x0001)
-	{
-		return static_cast<uint8_t>(tempVal);
+	if ((multiplier & 0x80) == 0x80) {
+		tempValArray[6] = tempVal << 7;
 	}
-	else if (tempMult == 0x0002)
+	if ((multiplier & 0x40) == 0x40) {
+		tempValArray[5] = tempVal << 6;
+	}
+	if ((multiplier & 0x20) == 0x20) {
+		tempValArray[4] = tempVal << 5;
+	}
+	if ((multiplier & 0x10) == 0x10) {
+		tempValArray[3] = tempVal << 4;
+	}
+	if ((multiplier & 0x08) == 0x08) {
+		tempValArray[2] = tempVal << 3;
+	}
+	if ((multiplier & 0x04) == 0x04) {
+		tempValArray[1] = tempVal << 2;
+	}
+	if ((multiplier & 0x02) == 0x02) {
+		tempValArray[0] = tempVal << 1;
+	}
+	//if ((multiplier & 0x01) == 0x01) { // Doesn't need to be executed
+		//tempValArray[0] = tempVal << 0;
+	//}
+	
+	for (int i = 0; i < 7; i++)
 	{
-		tempVal = tempVal * 0x0002;
+		tempVal ^= tempValArray[i];
+	}
+	
+	uint32_t modVal = 0x0000011B; // Irreducible polynomial
 
-		if ((tempVal & 0x0100) == 0x0100)
+	uint32_t slidingMask = 0x80000000;
+
+	uint8_t safetyCounter = 0;
+
+	//find first 1 in bit vector
+	while ((tempVal & slidingMask) != slidingMask)
+	{
+		slidingMask = slidingMask >> 1;
+	}
+
+		//shift first bit of modVal to that position
+	while ((modVal & slidingMask) != slidingMask)
+	{
+		modVal = modVal << 1;
+	}
+		
+	while (tempVal > 0x000000FF)
+	{
+		tempVal = tempVal ^ modVal;
+
+		while ((slidingMask & tempVal) != slidingMask)
 		{
-			tempVal = tempVal ^ 0x011B; //Irreduciable Polynomial
+			slidingMask = slidingMask >> 1;
+			modVal = modVal >> 1;
+
+			safetyCounter = safetyCounter + 1;
+
+			if(safetyCounter >= 32)
+			{
+				throw 1;
+			}
 		}
 
-		return static_cast<uint8_t>(tempVal);
 	}
-	else if (tempMult == 0x0003)
-	{
-		origTempVal = tempVal; //store for later
-
-		tempVal = tempVal * 0x0002; //first, by 2
-
-		if ((tempVal & 0x0100) == 0x0100)
-		{
-			tempVal = tempVal ^ 0x011B; //Irreduciable Polynomial
-		}
-
-		tempVal = tempVal ^ origTempVal; //used here
-
-		return static_cast<uint8_t>(tempVal);
-	}
-	//more needed for decrypt
-	else
-	{
-		std::cout << "Invalid Multiplier Value";
-		throw 1;
-	}
-
-	tempVal = tempVal * tempMult;
+	return static_cast<uint8_t>(tempVal);
 }
+
+//void AES::FlipMatrix()
+//{
+//	uint8_t tempState[4][8] = {
+//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
+//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
+//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
+//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00}
+//	};
+//
+//
+//	def FlipMatrix(matrix) :
+//		returnVal = []
+//		tempReturnVal = []
+//		for i in range(0, len(matrix[0])) :
+//			for j in range(0, len(matrix[0])) :
+//				tempReturnVal.append(matrix[j][i])
+//				returnVal.append(tempReturnVal.copy())
+//				tempReturnVal.clear()
+//
+//				return returnVal
+//}
 
 void AES::AddRoundKey(uint8_t roundNumber)
 {

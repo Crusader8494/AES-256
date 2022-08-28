@@ -99,10 +99,32 @@ void AES::PackOutputState(std::vector<uint8_t> inputState)
 
 void AES::ExpandKey()
 {
+	uint8_t tempRoundConstantArray[4] = { 0x00,0x00,0x00,0x00 };
+	uint8_t tempRoundArray[4] = { 0x00,0x00,0x00,0x00 };
 
+	for (int i = 0; i != 4; i++)
+	{
+		for (int j = 0; j != 8; j++)
+		{
+			initialAndExpandedKey[i][j][0] = initialKey[i][j]; //Set input key to position 0
+		}
+	}
+
+	for (int i = 0; i != 15; i++)
+	{
+		tempRoundConstantArray[1] = initialAndExpandedKey[0][7][i];
+		tempRoundConstantArray[2] = initialAndExpandedKey[1][7][i];
+		tempRoundConstantArray[3] = initialAndExpandedKey[2][7][i];
+		tempRoundConstantArray[0] = initialAndExpandedKey[3][7][i];
+
+		tempRoundConstantArray[0] = SBoxByValue(false, tempRoundConstantArray[0]);
+		tempRoundConstantArray[1] = SBoxByValue(false, tempRoundConstantArray[1]);
+		tempRoundConstantArray[2] = SBoxByValue(false, tempRoundConstantArray[2]);
+		tempRoundConstantArray[3] = SBoxByValue(false, tempRoundConstantArray[3]);
+	}
 }
 
-void AES::SBox(bool forwardInverse)
+void AES::SBoxState(bool forwardInverse)
 {
 	if (forwardInverse == false)
 	{
@@ -131,6 +153,26 @@ void AES::SBox(bool forwardInverse)
 		}
 	}
 	return;
+}
+
+uint8_t AES::SBoxByValue(bool forwardInverse, uint8_t value)
+{
+	if (forwardInverse == false)
+	{
+		uint8_t leftNib = (value >> 4) & 0x0F;
+		uint8_t rightNib = value & 0x0F;
+
+		value = forwardSBox[rightNib][leftNib]; //Confusing, sorry
+	}
+	else if (forwardInverse == true)
+	{
+
+		uint8_t leftNib = (value >> 4) & 0x0F;
+		uint8_t rightNib = value & 0x0F;
+
+		value = inverseSBox[rightNib][leftNib]; //Confusing, sorry
+	}
+	return value;
 }
 
 void AES::ShiftRows(bool forwardInverse)
@@ -246,10 +288,10 @@ void AES::MixColumns(bool forwardInverse)
 		{
 			for (int rowNum = 0; rowNum != 4; rowNum++)
 			{
-				result1 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrix[rowNum][0]);
-				result2 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrix[rowNum][1]);
-				result3 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrix[rowNum][2]);
-				result4 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrix[rowNum][3]);
+				result1 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[0][rowNum]);
+				result2 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[1][rowNum]);
+				result3 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[2][rowNum]);
+				result4 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[3][rowNum]);
 
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
@@ -257,7 +299,18 @@ void AES::MixColumns(bool forwardInverse)
 	}
 	else if (forwardInverse == true)
 	{
+		for (int columnNum = 0; columnNum != 8; columnNum++)
+		{
+			for (int rowNum = 0; rowNum != 4; rowNum++)
+			{
+				result1 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[0][rowNum]);
+				result2 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[1][rowNum]);
+				result3 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[2][rowNum]);
+				result4 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[3][rowNum]);
 
+				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
+			}
+		}
 	}
 }
 
@@ -336,28 +389,6 @@ uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 	}
 	return static_cast<uint8_t>(tempVal);
 }
-
-//void AES::FlipMatrix()
-//{
-//	uint8_t tempState[4][8] = {
-//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
-//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
-//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
-//		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00}
-//	};
-//
-//
-//	def FlipMatrix(matrix) :
-//		returnVal = []
-//		tempReturnVal = []
-//		for i in range(0, len(matrix[0])) :
-//			for j in range(0, len(matrix[0])) :
-//				tempReturnVal.append(matrix[j][i])
-//				returnVal.append(tempReturnVal.copy())
-//				tempReturnVal.clear()
-//
-//				return returnVal
-//}
 
 void AES::AddRoundKey(uint8_t roundNumber)
 {

@@ -9,7 +9,7 @@ int main() {
 
 	for (int i = 0; i != 32; i++)
 	{
-		cryptoKey.push_back(static_cast<uint8_t>(i));
+		cryptoKey.push_back(static_cast<uint8_t>(i*4));
 	}
 
 	AES crypto(cryptoKey);

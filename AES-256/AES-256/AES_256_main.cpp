@@ -28,25 +28,23 @@ std::vector<uint8_t> AES::AESDecrpyt(std::vector<uint8_t> inputState)
 {
 	AES::InitializeArrays();
 
-	AES::UnpackInputState(inputState);
+	AES::UnpackInputState(inputState);	
 
-	AddRoundKey(0);
-
-	for (int i = 15; i != 0; i--)
+	for (int i = 15; i != 1; i--)
 	{
 		DecryptNormalRound(i);
 	}
 
-	DecryptFinalRound(0);
+	DecryptFinalRound(1);
 
-	std::vector<uint8_t> returnVec;
+	AddRoundKey(0);
 
-	return returnVec;
+	return PackOutputState();
 }
 
 void AES::EncryptNormalRound(uint8_t roundNumber)
 {
-	SBox(false);
+	SBoxState(false);
 	ShiftRows(false);
 	MixColumns(false);
 	AddRoundKey(roundNumber);
@@ -54,24 +52,24 @@ void AES::EncryptNormalRound(uint8_t roundNumber)
 
 void AES::EncryptFinalRound(uint8_t roundNumber)
 {
-	SBox(false);
+	SBoxState(false);
 	ShiftRows(false);
 	AddRoundKey(roundNumber);
 }
 
 void AES::DecryptNormalRound(uint8_t roundNumber)
 {
-	SBox(true);
-	ShiftRows(true);
-	MixColumns(true);
 	AddRoundKey(roundNumber);
+	MixColumns(true);
+	ShiftRows(true);
+	SBoxState(true);
 }
 
 void AES::DecryptFinalRound(uint8_t roundNumber)
 {
-	SBox(true);
-	ShiftRows(true);
 	AddRoundKey(roundNumber);
+	ShiftRows(true);
+	SBoxState(true);
 }
 
 void AES::UnpackInputState(std::vector<uint8_t> inputState)
@@ -92,9 +90,18 @@ void AES::UnpackInputState(std::vector<uint8_t> inputState)
 	}
 }
 
-void AES::PackOutputState(std::vector<uint8_t> inputState)
+std::vector<uint8_t> AES::PackOutputState()
 {
+	std::vector<uint8_t> returnVec = {};
 
+	for (int i = 0; i != 4; i++)
+	{
+		for (int j = 0; j != 8; j++)
+		{
+			returnVec.push_back(state[i][j]);
+		}
+	}
+	return returnVec;
 }
 
 void AES::ExpandKey()
@@ -110,17 +117,57 @@ void AES::ExpandKey()
 		}
 	}
 
-	for (int i = 0; i != 15; i++)
+	for (int i = 0; i != 14; i++)
 	{
-		tempRoundConstantArray[1] = initialAndExpandedKey[0][7][i];
-		tempRoundConstantArray[2] = initialAndExpandedKey[1][7][i];
-		tempRoundConstantArray[3] = initialAndExpandedKey[2][7][i];
-		tempRoundConstantArray[0] = initialAndExpandedKey[3][7][i];
+		tempRoundConstantArray[1] = initialAndExpandedKey[0][7][i]; //Rotate
+		tempRoundConstantArray[2] = initialAndExpandedKey[1][7][i]; //Rotate
+		tempRoundConstantArray[3] = initialAndExpandedKey[2][7][i]; //Rotate
+		tempRoundConstantArray[0] = initialAndExpandedKey[3][7][i]; //Rotate
 
-		tempRoundConstantArray[0] = SBoxByValue(false, tempRoundConstantArray[0]);
-		tempRoundConstantArray[1] = SBoxByValue(false, tempRoundConstantArray[1]);
-		tempRoundConstantArray[2] = SBoxByValue(false, tempRoundConstantArray[2]);
-		tempRoundConstantArray[3] = SBoxByValue(false, tempRoundConstantArray[3]);
+		tempRoundConstantArray[0] = SBoxByValue(false, tempRoundConstantArray[0]); //substitute
+		tempRoundConstantArray[1] = SBoxByValue(false, tempRoundConstantArray[1]); //substitute
+		tempRoundConstantArray[2] = SBoxByValue(false, tempRoundConstantArray[2]); //substitute
+		tempRoundConstantArray[3] = SBoxByValue(false, tempRoundConstantArray[3]); //substitute
+
+		initialAndExpandedKey[0][0][i + 1] = initialAndExpandedKey[0][0][i] ^ tempRoundConstantArray[0] ^ roundConstants[0][i]; //Column 0
+		initialAndExpandedKey[1][0][i + 1] = initialAndExpandedKey[1][0][i] ^ tempRoundConstantArray[1] ^ roundConstants[1][i]; //Column 0
+		initialAndExpandedKey[2][0][i + 1] = initialAndExpandedKey[2][0][i] ^ tempRoundConstantArray[2] ^ roundConstants[2][i]; //Column 0
+		initialAndExpandedKey[3][0][i + 1] = initialAndExpandedKey[3][0][i] ^ tempRoundConstantArray[3] ^ roundConstants[3][i]; //Column 0
+
+		initialAndExpandedKey[0][1][i + 1] = initialAndExpandedKey[0][1][i] ^ initialAndExpandedKey[0][0][i + 1]; //Column 1
+		initialAndExpandedKey[1][1][i + 1] = initialAndExpandedKey[1][1][i] ^ initialAndExpandedKey[1][0][i + 1]; //Column 1
+		initialAndExpandedKey[2][1][i + 1] = initialAndExpandedKey[2][1][i] ^ initialAndExpandedKey[2][0][i + 1]; //Column 1
+		initialAndExpandedKey[3][1][i + 1] = initialAndExpandedKey[3][1][i] ^ initialAndExpandedKey[3][0][i + 1]; //Column 1
+
+		initialAndExpandedKey[0][2][i + 1] = initialAndExpandedKey[0][2][i] ^ initialAndExpandedKey[0][1][i + 1]; //Column 2
+		initialAndExpandedKey[1][2][i + 1] = initialAndExpandedKey[1][2][i] ^ initialAndExpandedKey[1][1][i + 1]; //Column 2
+		initialAndExpandedKey[2][2][i + 1] = initialAndExpandedKey[2][2][i] ^ initialAndExpandedKey[2][1][i + 1]; //Column 2
+		initialAndExpandedKey[3][2][i + 1] = initialAndExpandedKey[3][2][i] ^ initialAndExpandedKey[3][1][i + 1]; //Column 2
+
+		initialAndExpandedKey[0][3][i + 1] = initialAndExpandedKey[0][3][i] ^ initialAndExpandedKey[0][2][i + 1]; //Column 3
+		initialAndExpandedKey[1][3][i + 1] = initialAndExpandedKey[1][3][i] ^ initialAndExpandedKey[1][2][i + 1]; //Column 3
+		initialAndExpandedKey[2][3][i + 1] = initialAndExpandedKey[2][3][i] ^ initialAndExpandedKey[2][2][i + 1]; //Column 3
+		initialAndExpandedKey[3][3][i + 1] = initialAndExpandedKey[3][3][i] ^ initialAndExpandedKey[3][2][i + 1]; //Column 3
+
+		initialAndExpandedKey[0][4][i + 1] = initialAndExpandedKey[0][4][i] ^ initialAndExpandedKey[0][3][i + 1]; //Column 4
+		initialAndExpandedKey[1][4][i + 1] = initialAndExpandedKey[1][4][i] ^ initialAndExpandedKey[1][3][i + 1]; //Column 4
+		initialAndExpandedKey[2][4][i + 1] = initialAndExpandedKey[2][4][i] ^ initialAndExpandedKey[2][3][i + 1]; //Column 4
+		initialAndExpandedKey[3][4][i + 1] = initialAndExpandedKey[3][4][i] ^ initialAndExpandedKey[3][3][i + 1]; //Column 4
+
+		initialAndExpandedKey[0][5][i + 1] = initialAndExpandedKey[0][5][i] ^ initialAndExpandedKey[0][4][i + 1]; //Column 5
+		initialAndExpandedKey[1][5][i + 1] = initialAndExpandedKey[1][5][i] ^ initialAndExpandedKey[1][4][i + 1]; //Column 5
+		initialAndExpandedKey[2][5][i + 1] = initialAndExpandedKey[2][5][i] ^ initialAndExpandedKey[2][4][i + 1]; //Column 5
+		initialAndExpandedKey[3][5][i + 1] = initialAndExpandedKey[3][5][i] ^ initialAndExpandedKey[3][4][i + 1]; //Column 5
+
+		initialAndExpandedKey[0][6][i + 1] = initialAndExpandedKey[0][6][i] ^ initialAndExpandedKey[0][5][i + 1]; //Column 6
+		initialAndExpandedKey[1][6][i + 1] = initialAndExpandedKey[1][6][i] ^ initialAndExpandedKey[1][5][i + 1]; //Column 6
+		initialAndExpandedKey[2][6][i + 1] = initialAndExpandedKey[2][6][i] ^ initialAndExpandedKey[2][5][i + 1]; //Column 6
+		initialAndExpandedKey[3][6][i + 1] = initialAndExpandedKey[3][6][i] ^ initialAndExpandedKey[3][5][i + 1]; //Column 6
+
+		initialAndExpandedKey[0][7][i + 1] = initialAndExpandedKey[0][7][i] ^ initialAndExpandedKey[0][6][i + 1]; //Column 7
+		initialAndExpandedKey[1][7][i + 1] = initialAndExpandedKey[1][7][i] ^ initialAndExpandedKey[1][6][i + 1]; //Column 7
+		initialAndExpandedKey[2][7][i + 1] = initialAndExpandedKey[2][7][i] ^ initialAndExpandedKey[2][6][i + 1]; //Column 7
+		initialAndExpandedKey[3][7][i + 1] = initialAndExpandedKey[3][7][i] ^ initialAndExpandedKey[3][6][i + 1]; //Column 7
 	}
 }
 
@@ -242,6 +289,7 @@ void AES::ShiftRows(bool forwardInverse)
 		state[2][6] = tempArray[1];
 		state[2][7] = tempArray[2];
 	}
+
 	//row 3////////////////////////////////////////////////////
 	for (int i = 0; i != 8; i++)
 	{
@@ -273,6 +321,7 @@ void AES::ShiftRows(bool forwardInverse)
 
 	if (debugLogs == true)
 	{
+		printf("shiftRows:\n");
 		printState();
 	}
 	return;
@@ -296,6 +345,11 @@ void AES::MixColumns(bool forwardInverse)
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
 		}
+		if (debugLogs == true) 
+		{
+			printf("Mix Columns:\n");
+			printState();
+		}
 	}
 	else if (forwardInverse == true)
 	{
@@ -310,6 +364,11 @@ void AES::MixColumns(bool forwardInverse)
 
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
+		}
+		if (debugLogs == true)
+		{
+			printf("Mix Columns:\n");
+			printState();
 		}
 	}
 }
@@ -392,7 +451,23 @@ uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 
 void AES::AddRoundKey(uint8_t roundNumber)
 {
-	//for(int i = 0; i != )
+	if (debugLogs == true)
+	{
+		printf("Pre Round Key:\n");
+		printState();
+	}
+	for (int i = 0; i != 4; i++)
+	{
+		for (int j = 0; j != 8; j++)
+		{
+			state[i][j] = state[i][j] ^ initialAndExpandedKey[i][j][roundNumber];
+		}
+	}
+	if (debugLogs == true)
+	{
+		printf("Post Round Key:\n");
+		printState();
+	}
 }
 
 void AES::printState()

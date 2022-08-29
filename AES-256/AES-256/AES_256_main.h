@@ -18,9 +18,9 @@ public:
 
 		for (int i = 0; i != 4; i++)
 		{
-			for (int j = 0; j != 4; j++)
+			for (int j = 0; j != 8; j++)
 			{
-				initialKey[i][j] = inputKey.at(i); //Copy Key bytes over to an Array for later manipulation
+				initialKey[i][j] = inputKey.at((i*8)+j); //Copy Key bytes over to an Array for later manipulation
 			}
 		}
 
@@ -156,7 +156,7 @@ private:
 	uint8_t MultiplyInGF(uint8_t stateValue, uint8_t multiplier);
 
 	void UnpackInputState(std::vector<uint8_t> inputState);
-	void PackOutputState(std::vector<uint8_t> inputState);
+	std::vector<uint8_t> PackOutputState();
 
 	void printState();
 };

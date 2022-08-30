@@ -4,33 +4,25 @@
 
 std::vector<uint8_t> AES::AESEncrpyt(std::vector<uint8_t> inputState)
 {
-	AES::InitializeArrays();
-
 	AES::UnpackInputState(inputState);
-
 
 	AddRoundKey(0);
 
-	for (int i = 1; i != 15; i++)
+	for (int i = 1; i != 14; i++)
 	{
 		EncryptNormalRound(i);
 	}
 	
-	EncryptFinalRound(15);
+	EncryptFinalRound(14);
 
-
-	std::vector<uint8_t> returnVec;
-
-	return returnVec;
+	return PackOutputState();
 }
 
 std::vector<uint8_t> AES::AESDecrpyt(std::vector<uint8_t> inputState)
 {
-	AES::InitializeArrays();
-
 	AES::UnpackInputState(inputState);	
 
-	for (int i = 15; i != 1; i--)
+	for (int i = 14; i != 2; i--)
 	{
 		DecryptNormalRound(i);
 	}
@@ -59,17 +51,17 @@ void AES::EncryptFinalRound(uint8_t roundNumber)
 
 void AES::DecryptNormalRound(uint8_t roundNumber)
 {
-	AddRoundKey(roundNumber);
-	MixColumns(true);
-	ShiftRows(true);
 	SBoxState(true);
+	ShiftRows(true);
+	MixColumns(true);
+	AddRoundKey(roundNumber);
 }
 
 void AES::DecryptFinalRound(uint8_t roundNumber)
 {
-	AddRoundKey(roundNumber);
-	ShiftRows(true);
 	SBoxState(true);
+	ShiftRows(true);
+	AddRoundKey(roundNumber);
 }
 
 void AES::UnpackInputState(std::vector<uint8_t> inputState)
@@ -226,6 +218,7 @@ void AES::ShiftRows(bool forwardInverse)
 {
 	if (debugLogs == true)
 	{
+		printf("Pre Shift Rows:\n");
 		printState();
 	}
 
@@ -321,7 +314,7 @@ void AES::ShiftRows(bool forwardInverse)
 
 	if (debugLogs == true)
 	{
-		printf("shiftRows:\n");
+		printf("Post Shift Rows:\n");
 		printState();
 	}
 	return;
@@ -331,23 +324,29 @@ void AES::MixColumns(bool forwardInverse)
 {
 	uint8_t result1, result2, result3, result4 = 0x00;
 
+	if (debugLogs == true)
+	{
+		printf("Pre Mix Columns:\n");
+		printState();
+	}
+
 	if (forwardInverse == false)
 	{
 		for (int columnNum = 0; columnNum != 8; columnNum++)
 		{
 			for (int rowNum = 0; rowNum != 4; rowNum++)
 			{
-				result1 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[0][rowNum]);
-				result2 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[1][rowNum]);
-				result3 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[2][rowNum]);
-				result4 = MultiplyInGF(state[rowNum][columnNum], forwardMixColumnsMatrixPreFlipped[3][rowNum]);
+				result1 = MultiplyInGF(state[0][columnNum], forwardMixColumnsMatrixPreFlipped[0][rowNum]);
+				result2 = MultiplyInGF(state[1][columnNum], forwardMixColumnsMatrixPreFlipped[1][rowNum]);
+				result3 = MultiplyInGF(state[2][columnNum], forwardMixColumnsMatrixPreFlipped[2][rowNum]);
+				result4 = MultiplyInGF(state[3][columnNum], forwardMixColumnsMatrixPreFlipped[3][rowNum]);
 
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
 		}
 		if (debugLogs == true) 
 		{
-			printf("Mix Columns:\n");
+			printf("Post Mix Columns:\n");
 			printState();
 		}
 	}
@@ -357,17 +356,17 @@ void AES::MixColumns(bool forwardInverse)
 		{
 			for (int rowNum = 0; rowNum != 4; rowNum++)
 			{
-				result1 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[0][rowNum]);
-				result2 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[1][rowNum]);
-				result3 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[2][rowNum]);
-				result4 = MultiplyInGF(state[rowNum][columnNum], inverseMixColumnsMatrixPreFlipped[3][rowNum]);
+				result1 = MultiplyInGF(state[0][columnNum], inverseMixColumnsMatrixPreFlipped[0][rowNum]);
+				result2 = MultiplyInGF(state[1][columnNum], inverseMixColumnsMatrixPreFlipped[1][rowNum]);
+				result3 = MultiplyInGF(state[2][columnNum], inverseMixColumnsMatrixPreFlipped[2][rowNum]);
+				result4 = MultiplyInGF(state[3][columnNum], inverseMixColumnsMatrixPreFlipped[3][rowNum]);
 
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
 		}
 		if (debugLogs == true)
 		{
-			printf("Mix Columns:\n");
+			printf("Post Mix Columns:\n");
 			printState();
 		}
 	}
@@ -375,8 +374,12 @@ void AES::MixColumns(bool forwardInverse)
 
 uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 {
+	if (multiplier == 0x01)
+	{
+		return stateValue;
+	}
+
 	uint32_t tempVal = static_cast<uint32_t>(stateValue);
-	uint32_t tempMult = static_cast<uint32_t>(multiplier);
 
 	uint32_t tempValArray[7] = {0,0,0,0,0,0,0};
 
@@ -405,11 +408,18 @@ uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 		//tempValArray[0] = tempVal << 0;
 	//}
 	
+	uint32_t tempXORVal = 0x00000000;
+
 	for (int i = 0; i < 7; i++)
 	{
-		tempVal ^= tempValArray[i];
+		tempXORVal ^= tempValArray[i];
 	}
 	
+	if (tempXORVal <= 255)
+	{
+		return static_cast<uint8_t>(tempXORVal);
+	}
+
 	uint32_t modVal = 0x0000011B; // Irreducible polynomial
 
 	uint32_t slidingMask = 0x80000000;
@@ -417,22 +427,22 @@ uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 	uint8_t safetyCounter = 0;
 
 	//find first 1 in bit vector
-	while ((tempVal & slidingMask) != slidingMask)
+	while ((tempXORVal & slidingMask) != slidingMask)
 	{
 		slidingMask = slidingMask >> 1;
 	}
 
-		//shift first bit of modVal to that position
+	//shift first bit of modVal to that position
 	while ((modVal & slidingMask) != slidingMask)
 	{
 		modVal = modVal << 1;
 	}
 		
-	while (tempVal > 0x000000FF)
+	while (tempXORVal > 0x000000FF)
 	{
-		tempVal = tempVal ^ modVal;
+		tempXORVal = tempXORVal ^ modVal;
 
-		while ((slidingMask & tempVal) != slidingMask)
+		while ((slidingMask & tempXORVal) != slidingMask)
 		{
 			slidingMask = slidingMask >> 1;
 			modVal = modVal >> 1;
@@ -446,7 +456,7 @@ uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 		}
 
 	}
-	return static_cast<uint8_t>(tempVal);
+	return static_cast<uint8_t>(tempXORVal);
 }
 
 void AES::AddRoundKey(uint8_t roundNumber)
@@ -472,7 +482,7 @@ void AES::AddRoundKey(uint8_t roundNumber)
 
 void AES::printState()
 {
-	std::printf("printState:\n");
+	//std::printf("printState:\n");
 	std::printf("{%X,%X,%X,%X,%X,%X,%X,%X}\n", state[0][0], state[0][1], state[0][2], state[0][3], state[0][4], state[0][5], state[0][6], state[0][7]);
 	std::printf("{%X,%X,%X,%X,%X,%X,%X,%X}\n", state[1][0], state[1][1], state[1][2], state[1][3], state[1][4], state[1][5], state[1][6], state[1][7]);
 	std::printf("{%X,%X,%X,%X,%X,%X,%X,%X}\n", state[2][0], state[2][1], state[2][2], state[2][3], state[2][4], state[2][5], state[2][6], state[2][7]);

@@ -120,7 +120,7 @@ private:
 	void InitializeArrays()
 	{
 		for (int i = 0; i != 4; i++) {
-			for (int j = 0; j != 4; j++)
+			for (int j = 0; j != 8; j++)
 			{
 				initialKey[i][j] = 0x00;
 			}
@@ -139,6 +139,7 @@ private:
 		}
 	};
 
+	//Main Functions
 	void ExpandKey();
 
 	void EncryptNormalRound(uint8_t roundNumber);
@@ -158,5 +159,6 @@ private:
 	void UnpackInputState(std::vector<uint8_t> inputState);
 	std::vector<uint8_t> PackOutputState();
 
+	//Debug Functions
 	void printState();
 };

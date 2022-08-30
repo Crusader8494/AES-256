@@ -21,7 +21,9 @@ int main() {
 		plainText.push_back(static_cast<uint8_t>(32 - i));
 	}
 
-	crypto.AESEncrpyt(plainText);
+	std::vector<uint8_t> cipherText = crypto.AESEncrpyt(plainText);
+
+	std::vector<uint8_t> decipheredText = crypto.AESDecrpyt(cipherText);
 
 	return 0;
 }

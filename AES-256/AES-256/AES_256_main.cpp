@@ -22,14 +22,14 @@ std::vector<uint8_t> AES::AESDecrpyt(std::vector<uint8_t> inputState)
 {
 	AES::UnpackInputState(inputState);	
 
-	for (int i = 14; i != 2; i--)
+	AddRoundKey(14);
+
+	for (int i = 13; i != 0; i--)
 	{
 		DecryptNormalRound(i);
 	}
 
-	DecryptFinalRound(1);
-
-	AddRoundKey(0);
+	DecryptFinalRound(0);
 
 	return PackOutputState();
 }

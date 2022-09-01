@@ -6,76 +6,76 @@ std::vector<uint8_t> AES::AESEncrpyt(std::vector<uint8_t> inputState)
 {
 	AES::UnpackInputState(inputState);
 
-	AddRoundKey(0);
+	AES::AddRoundKey(0);
 
 	for (int i = 1; i != 14; i++)
 	{
-		EncryptNormalRound(i);
+		AES::EncryptNormalRound(i);
 	}
 	
-	EncryptFinalRound(14);
+	AES::EncryptFinalRound(14);
 
-	return PackOutputState();
+	return AES::PackOutputState();
 }
 
 std::vector<uint8_t> AES::AESDecrpyt(std::vector<uint8_t> inputState)
 {
 	AES::UnpackInputState(inputState);	
 
-	AddRoundKey(14);
+	AES::AddRoundKey(14);
 
 	for (int i = 13; i != 0; i--)
 	{
-		DecryptNormalRound(i);
+		AES::DecryptNormalRound(i);
 	}
 
-	DecryptFinalRound(0);
+	AES::DecryptFinalRound(0);
 
-	return PackOutputState();
+	return AES::PackOutputState();
 }
 
 void AES::EncryptNormalRound(uint8_t roundNumber)
 {
-	SBoxState(false);
-	ShiftRows(false);
-	MixColumns(false);
-	AddRoundKey(roundNumber);
+	AES::SBoxState(false);
+	AES::ShiftRows(false);
+	AES::MixColumns(false);
+	AES::AddRoundKey(roundNumber);
 }
 
 void AES::EncryptFinalRound(uint8_t roundNumber)
 {
-	SBoxState(false);
-	ShiftRows(false);
-	AddRoundKey(roundNumber);
+	AES::SBoxState(false);
+	AES::ShiftRows(false);
+	AES::AddRoundKey(roundNumber);
 }
 
 void AES::DecryptNormalRound(uint8_t roundNumber)
 {
-	SBoxState(true);
-	ShiftRows(true);
-	MixColumns(true);
-	AddRoundKey(roundNumber);
+	AES::SBoxState(true);
+	AES::ShiftRows(true);
+	AES::MixColumns(true);
+	AES::AddRoundKey(roundNumber);
 }
 
 void AES::DecryptFinalRound(uint8_t roundNumber)
 {
-	SBoxState(true);
-	ShiftRows(true);
-	AddRoundKey(roundNumber);
+	AES::SBoxState(true);
+	AES::ShiftRows(true);
+	AES::AddRoundKey(roundNumber);
 }
 
 void AES::UnpackInputState(std::vector<uint8_t> inputState)
 {
 	if (inputState.size() != 32)
 	{
-		std::cout << "Input Vector of invalid length";
+		std::printf("Input Vector of invalid length\n");
 		throw 1;
 	}
 	for (int i = 0; i != 32; i++)
 	{
 		if (debugLogs == true)
 		{
-			std::printf("UnpackInputState: Placing data %u at state[%u][%u] \n", inputState.at(i), i / 8, i % 8);
+			std::printf("UnpackInputState: Placing data 0x%X at state[%u][%u] \n", inputState.at(i), i / 8, i % 8);
 		}
 
 		state[i / 8][i % 8] = inputState.at(i);
@@ -99,7 +99,6 @@ std::vector<uint8_t> AES::PackOutputState()
 void AES::ExpandKey()
 {
 	uint8_t tempRoundConstantArray[4] = { 0x00,0x00,0x00,0x00 };
-	uint8_t tempRoundArray[4] = { 0x00,0x00,0x00,0x00 };
 
 	for (int i = 0; i != 4; i++)
 	{
@@ -116,10 +115,10 @@ void AES::ExpandKey()
 		tempRoundConstantArray[3] = initialAndExpandedKey[2][7][i]; //Rotate
 		tempRoundConstantArray[0] = initialAndExpandedKey[3][7][i]; //Rotate
 
-		tempRoundConstantArray[0] = SBoxByValue(false, tempRoundConstantArray[0]); //substitute
-		tempRoundConstantArray[1] = SBoxByValue(false, tempRoundConstantArray[1]); //substitute
-		tempRoundConstantArray[2] = SBoxByValue(false, tempRoundConstantArray[2]); //substitute
-		tempRoundConstantArray[3] = SBoxByValue(false, tempRoundConstantArray[3]); //substitute
+		tempRoundConstantArray[0] = AES::SBoxByValue(false, tempRoundConstantArray[0]); //substitute
+		tempRoundConstantArray[1] = AES::SBoxByValue(false, tempRoundConstantArray[1]); //substitute
+		tempRoundConstantArray[2] = AES::SBoxByValue(false, tempRoundConstantArray[2]); //substitute
+		tempRoundConstantArray[3] = AES::SBoxByValue(false, tempRoundConstantArray[3]); //substitute
 
 		initialAndExpandedKey[0][0][i + 1] = initialAndExpandedKey[0][0][i] ^ tempRoundConstantArray[0] ^ roundConstants[0][i]; //Column 0
 		initialAndExpandedKey[1][0][i + 1] = initialAndExpandedKey[1][0][i] ^ tempRoundConstantArray[1] ^ roundConstants[1][i]; //Column 0
@@ -171,10 +170,7 @@ void AES::SBoxState(bool forwardInverse)
 		{
 			for (int j = 0; j != 8; j++)
 			{
-				uint8_t leftNib = (state[i][j] >> 4) & 0x0F;
-				uint8_t rightNib = state[i][j] & 0x0F;
-
-				state[i][j] = forwardSBox[rightNib][leftNib]; //Confusing, sorry
+				state[i][j] = forwardSBox[state[i][j]];
 			}
 		}
 	}
@@ -184,10 +180,7 @@ void AES::SBoxState(bool forwardInverse)
 		{
 			for (int j = 0; j != 8; j++)
 			{
-				uint8_t leftNib = (state[i][j] >> 4) & 0x0F;
-				uint8_t rightNib = state[i][j] & 0x0F;
-
-				state[i][j] = inverseSBox[rightNib][leftNib]; //Confusing, sorry
+				state[i][j] = inverseSBox[state[i][j]];
 			}
 		}
 	}
@@ -198,28 +191,21 @@ uint8_t AES::SBoxByValue(bool forwardInverse, uint8_t value)
 {
 	if (forwardInverse == false)
 	{
-		uint8_t leftNib = (value >> 4) & 0x0F;
-		uint8_t rightNib = value & 0x0F;
-
-		value = forwardSBox[rightNib][leftNib]; //Confusing, sorry
+		return forwardSBox[value];
 	}
 	else if (forwardInverse == true)
 	{
-
-		uint8_t leftNib = (value >> 4) & 0x0F;
-		uint8_t rightNib = value & 0x0F;
-
-		value = inverseSBox[rightNib][leftNib]; //Confusing, sorry
+		return inverseSBox[value];
 	}
-	return value;
+	
 }
 
 void AES::ShiftRows(bool forwardInverse)
 {
 	if (debugLogs == true)
 	{
-		printf("Pre Shift Rows:\n");
-		printState();
+		std::printf("Pre Shift Rows:\n");
+		AES::printState();
 	}
 
 	//row 0
@@ -314,8 +300,8 @@ void AES::ShiftRows(bool forwardInverse)
 
 	if (debugLogs == true)
 	{
-		printf("Post Shift Rows:\n");
-		printState();
+		std::printf("Post Shift Rows:\n");
+		AES::printState();
 	}
 	return;
 }
@@ -326,8 +312,8 @@ void AES::MixColumns(bool forwardInverse)
 
 	if (debugLogs == true)
 	{
-		printf("Pre Mix Columns:\n");
-		printState();
+		std::printf("Pre Mix Columns:\n");
+		AES::printState();
 	}
 
 	if (forwardInverse == false)
@@ -336,18 +322,18 @@ void AES::MixColumns(bool forwardInverse)
 		{
 			for (int rowNum = 0; rowNum != 4; rowNum++)
 			{
-				result1 = MultiplyInGF(state[0][columnNum], forwardMixColumnsMatrixPreFlipped[0][rowNum]);
-				result2 = MultiplyInGF(state[1][columnNum], forwardMixColumnsMatrixPreFlipped[1][rowNum]);
-				result3 = MultiplyInGF(state[2][columnNum], forwardMixColumnsMatrixPreFlipped[2][rowNum]);
-				result4 = MultiplyInGF(state[3][columnNum], forwardMixColumnsMatrixPreFlipped[3][rowNum]);
+				result1 = AES::MultiplyInGF(state[0][columnNum], forwardMixColumnsMatrixPreFlipped[0][rowNum]);
+				result2 = AES::MultiplyInGF(state[1][columnNum], forwardMixColumnsMatrixPreFlipped[1][rowNum]);
+				result3 = AES::MultiplyInGF(state[2][columnNum], forwardMixColumnsMatrixPreFlipped[2][rowNum]);
+				result4 = AES::MultiplyInGF(state[3][columnNum], forwardMixColumnsMatrixPreFlipped[3][rowNum]);
 
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
 		}
 		if (debugLogs == true) 
 		{
-			printf("Post Mix Columns:\n");
-			printState();
+			std::printf("Post Mix Columns:\n");
+			AES::printState();
 		}
 	}
 	else if (forwardInverse == true)
@@ -356,20 +342,22 @@ void AES::MixColumns(bool forwardInverse)
 		{
 			for (int rowNum = 0; rowNum != 4; rowNum++)
 			{
-				result1 = MultiplyInGF(state[0][columnNum], inverseMixColumnsMatrixPreFlipped[0][rowNum]);
-				result2 = MultiplyInGF(state[1][columnNum], inverseMixColumnsMatrixPreFlipped[1][rowNum]);
-				result3 = MultiplyInGF(state[2][columnNum], inverseMixColumnsMatrixPreFlipped[2][rowNum]);
-				result4 = MultiplyInGF(state[3][columnNum], inverseMixColumnsMatrixPreFlipped[3][rowNum]);
+				result1 = AES::MultiplyInGF(state[0][columnNum], inverseMixColumnsMatrixPreFlipped[0][rowNum]);
+				result2 = AES::MultiplyInGF(state[1][columnNum], inverseMixColumnsMatrixPreFlipped[1][rowNum]);
+				result3 = AES::MultiplyInGF(state[2][columnNum], inverseMixColumnsMatrixPreFlipped[2][rowNum]);
+				result4 = AES::MultiplyInGF(state[3][columnNum], inverseMixColumnsMatrixPreFlipped[3][rowNum]);
 
 				state[rowNum][columnNum] = result1 ^ result2 ^ result3 ^ result4;
 			}
 		}
 		if (debugLogs == true)
 		{
-			printf("Post Mix Columns:\n");
-			printState();
+			std::printf("Post Mix Columns:\n");
+			AES::printState();
 		}
 	}
+
+	return;
 }
 
 uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
@@ -379,104 +367,119 @@ uint8_t AES::MultiplyInGF(uint8_t stateValue ,uint8_t multiplier)
 		return stateValue;
 	}
 
-	uint32_t tempVal = static_cast<uint32_t>(stateValue);
-
-	uint32_t tempValArray[7] = {0,0,0,0,0,0,0};
-
-	if ((multiplier & 0x80) == 0x80) {
-		tempValArray[6] = tempVal << 7;
-	}
-	if ((multiplier & 0x40) == 0x40) {
-		tempValArray[5] = tempVal << 6;
-	}
-	if ((multiplier & 0x20) == 0x20) {
-		tempValArray[4] = tempVal << 5;
-	}
-	if ((multiplier & 0x10) == 0x10) {
-		tempValArray[3] = tempVal << 4;
-	}
-	if ((multiplier & 0x08) == 0x08) {
-		tempValArray[2] = tempVal << 3;
-	}
-	if ((multiplier & 0x04) == 0x04) {
-		tempValArray[1] = tempVal << 2;
-	}
-	if ((multiplier & 0x02) == 0x02) {
-		tempValArray[0] = tempVal << 1;
-	}
-	//if ((multiplier & 0x01) == 0x01) { // Doesn't need to be executed
-		//tempValArray[0] = tempVal << 0;
-	//}
-	
-	uint32_t tempXORVal = 0x00000000;
-
-	for (int i = 0; i < 7; i++)
+	if (mathOrLUTGFMultiplication == false)
 	{
-		tempXORVal ^= tempValArray[i];
-	}
-	
-	if (tempXORVal <= 255)
-	{
-		return static_cast<uint8_t>(tempXORVal);
-	}
+		uint32_t tempVal = static_cast<uint32_t>(stateValue);
 
-	uint32_t modVal = 0x0000011B; // Irreducible polynomial
+		uint32_t tempValArray[7] = { 0,0,0,0,0,0,0 };
 
-	uint32_t slidingMask = 0x80000000;
+		if ((multiplier & 0x80) == 0x80) {
+			tempValArray[6] = tempVal << 7;
+		}
+		if ((multiplier & 0x40) == 0x40) {
+			tempValArray[5] = tempVal << 6;
+		}
+		if ((multiplier & 0x20) == 0x20) {
+			tempValArray[4] = tempVal << 5;
+		}
+		if ((multiplier & 0x10) == 0x10) {
+			tempValArray[3] = tempVal << 4;
+		}
+		if ((multiplier & 0x08) == 0x08) {
+			tempValArray[2] = tempVal << 3;
+		}
+		if ((multiplier & 0x04) == 0x04) {
+			tempValArray[1] = tempVal << 2;
+		}
+		if ((multiplier & 0x02) == 0x02) {
+			tempValArray[0] = tempVal << 1;
+		}
+		//if ((multiplier & 0x01) == 0x01) { // Doesn't need to be executed
+			//tempValArray[0] = tempVal << 0;
+		//}
 
-	uint8_t safetyCounter = 0;
+		uint32_t tempXORVal = 0x00000000;
 
-	//find first 1 in bit vector
-	while ((tempXORVal & slidingMask) != slidingMask)
-	{
-		slidingMask = slidingMask >> 1;
-	}
-
-	//shift first bit of modVal to that position
-	while ((modVal & slidingMask) != slidingMask)
-	{
-		modVal = modVal << 1;
-	}
-		
-	while (tempXORVal > 0x000000FF)
-	{
-		tempXORVal = tempXORVal ^ modVal;
-
-		while ((slidingMask & tempXORVal) != slidingMask)
+		for (int i = 0; i < 7; i++)
 		{
-			slidingMask = slidingMask >> 1;
-			modVal = modVal >> 1;
-
-			safetyCounter = safetyCounter + 1;
-
-			if(safetyCounter >= 32)
-			{
-				throw 1;
-			}
+			tempXORVal ^= tempValArray[i];
 		}
 
+		if (tempXORVal <= 255)
+		{
+			return static_cast<uint8_t>(tempXORVal);
+		}
+
+		uint32_t modVal = 0x0000011B; // Irreducible polynomial
+
+		uint32_t slidingMask = 0x80000000;
+
+		uint8_t safetyCounter = 0;
+
+		//find first 1 in bit vector
+		while ((tempXORVal & slidingMask) != slidingMask)
+		{
+			slidingMask = slidingMask >> 1;
+		}
+
+		//shift first bit of modVal to that position
+		while ((modVal & slidingMask) != slidingMask)
+		{
+			modVal = modVal << 1;
+		}
+
+		while (tempXORVal > 0x000000FF)
+		{
+			tempXORVal = tempXORVal ^ modVal;
+
+			while ((slidingMask & tempXORVal) != slidingMask)
+			{
+				slidingMask = slidingMask >> 1;
+				modVal = modVal >> 1;
+
+				safetyCounter = safetyCounter + 1;
+
+				if (safetyCounter >= 32)
+				{
+					throw 1;
+				}
+			}
+
+		}
+		return static_cast<uint8_t>(tempXORVal);
 	}
-	return static_cast<uint8_t>(tempXORVal);
+	else if (mathOrLUTGFMultiplication == true)
+	{
+		if ((multiplier == 0x02) || (multiplier == 0x03) || (multiplier == 0x09) || 
+			(multiplier == 0x0B) || (multiplier == 0x0D) || (multiplier == 0x0E))
+		{
+			return multiplyByXGFLUT[GFLUTMap[multiplier]][stateValue];
+		}
+		else
+		{
+			throw 1;
+		}
+	}
 }
 
 void AES::AddRoundKey(uint8_t roundNumber)
 {
 	if (debugLogs == true)
 	{
-		printf("Pre Round Key:\n");
-		printState();
+		std::printf("Pre Round Key:\n");
+		AES::printState();
 	}
 	for (int i = 0; i != 4; i++)
 	{
 		for (int j = 0; j != 8; j++)
 		{
-			state[i][j] = state[i][j] ^ initialAndExpandedKey[i][j][roundNumber];
+			state[i][j] ^= initialAndExpandedKey[i][j][roundNumber];
 		}
 	}
 	if (debugLogs == true)
 	{
-		printf("Post Round Key:\n");
-		printState();
+		std::printf("Post Round Key:\n");
+		AES::printState();
 	}
 }
 
@@ -487,5 +490,105 @@ void AES::printState()
 	std::printf("{%X,%X,%X,%X,%X,%X,%X,%X}\n", state[1][0], state[1][1], state[1][2], state[1][3], state[1][4], state[1][5], state[1][6], state[1][7]);
 	std::printf("{%X,%X,%X,%X,%X,%X,%X,%X}\n", state[2][0], state[2][1], state[2][2], state[2][3], state[2][4], state[2][5], state[2][6], state[2][7]);
 	std::printf("{%X,%X,%X,%X,%X,%X,%X,%X}\n", state[3][0], state[3][1], state[3][2], state[3][3], state[3][4], state[3][5], state[3][6], state[3][7]);
+	return;
+}
+
+void AES::testAES()
+{
+	for (int i = 0; i != 4; i++)
+	{
+		for (int j = 0; j != 8; j++)
+		{
+			state[i][j] = static_cast<uint8_t>((3*i)+j);
+		}
+	}
+
+	std::vector<uint8_t> plainText;
+
+	for (int i = 0; i != 32; i++)
+	{
+		plainText.push_back(static_cast<uint8_t>(32 - i));
+	}
+
+	auto x = AESEncrpyt(plainText);
+
+	if (plainText != AESDecrpyt(x))
+	{
+		std::printf("Overall Test Failed Encryption/Decryption\n");
+
+		//Reset state for sub box test
+		bool subBoxTestPassFail = true;
+		for (int i = 0; i != 4; i++)
+		{
+			for (int j = 0; j != 8; j++)
+			{
+				state[i][j] = static_cast<uint8_t>((3 * i) + j);
+			}
+		}
+
+		AES::SBoxState(false);
+		AES::SBoxState(true);
+
+		for (int i = 0; i != 4; i++)
+		{
+			for (int j = 0; j != 8; j++)
+			{
+				if (state[i][j] != static_cast<uint8_t>((3 * i) + j))
+				{
+					subBoxTestPassFail = false;
+				}
+			}
+		}
+		if (subBoxTestPassFail == false)
+		{
+			std::printf("SubBoxTest Failed, Exiting\n");
+			return;
+		}
+		else
+		{
+			std::printf("SubBoxTest Passed, Continuing\n");
+		}
+
+		//Shift Rows Test
+		bool shiftRowsTestPassFail = true;
+		for (int i = 0; i != 4; i++)
+		{
+			for (int j = 0; j != 8; j++)
+			{
+				state[i][j] = static_cast<uint8_t>((3 * i) + j);
+			}
+		}
+
+		AES::ShiftRows(false);
+		AES::ShiftRows(true);
+
+		for (int i = 0; i != 4; i++)
+		{
+			for (int j = 0; j != 8; j++)
+			{
+				if (state[i][j] != static_cast<uint8_t>((3 * i) + j))
+				{
+					shiftRowsTestPassFail = false;
+				}
+			}
+		}
+		if (shiftRowsTestPassFail == false)
+		{
+			std::printf("ShiftRowsTest Failed, Exiting\n");
+			return;
+		}
+		else
+		{
+			std::printf("ShiftRowsTest Passed, Continuing\n");
+		}
+
+		//Mix Columns Test
+
+		//Add Round Key Test
+	}
+	else
+	{
+		std::printf("Overall Test Passed, no more tests needed\n");
+	}
 	return;
 }

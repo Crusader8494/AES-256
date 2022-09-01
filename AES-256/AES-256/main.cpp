@@ -12,7 +12,7 @@ int main() {
 		cryptoKey.push_back(static_cast<uint8_t>(i*4));
 	}
 
-	AES crypto(cryptoKey);
+	AES crypto(cryptoKey,true);
 
 	std::vector<uint8_t> plainText;
 

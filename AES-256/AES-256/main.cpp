@@ -7,18 +7,18 @@ int main() {
 
 	std::vector<uint8_t> cryptoKey;
 
-	for (int i = 0; i != 32; i++)
+	for (uint8_t i = 0; i != 32; i++)
 	{
-		cryptoKey.push_back(static_cast<uint8_t>(i*4));
+		cryptoKey.push_back(i*4);
 	}
 
 	AES crypto(cryptoKey,true);
 
 	std::vector<uint8_t> plainText;
 
-	for (int i = 0; i != 32; i++)
+	for (uint8_t i = 0; i != 32; i++)
 	{
-		plainText.push_back(static_cast<uint8_t>(32 - i));
+		plainText.push_back(32 - i);
 	}
 
 	std::vector<uint8_t> cipherText = crypto.AESEncrpyt(plainText);

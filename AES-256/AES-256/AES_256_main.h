@@ -18,15 +18,13 @@ public:
 
 		InitializeArrays();
 
-		testAES();
-
-		InitializeArrays();
-
+		int x = 0;
 		for (int i = 0; i != 4; i++)
 		{
 			for (int j = 0; j != 8; j++)
 			{
-				initialKey[i][j] = inputKey.at((i*8)+j); //Copy Key bytes over to an Array for later manipulation
+				x = (i * 8) + j;
+				initialKey[i][j] = inputKey.at(x); //Copy Key bytes over to an Array for later manipulation
 			}
 		}
 
@@ -39,6 +37,23 @@ public:
 		GFLUTMap[0x0B] = 0x03;
 		GFLUTMap[0x0D] = 0x04;
 		GFLUTMap[0x0E] = 0x05;
+
+		//TestAES(); // AES Unit Test
+
+		//Re expand the key because I screwed it up in the test above // fix this later
+		InitializeArrays();
+
+		x = 0;
+		for (int i = 0; i != 4; i++)
+		{
+			for (int j = 0; j != 8; j++)
+			{
+				x = (i * 8) + j;
+				initialKey[i][j] = inputKey.at(x); //Copy Key bytes over to an Array for later manipulation
+			}
+		}
+
+		ExpandKey();
 	}
 
 	~AES() //Destructor
@@ -67,6 +82,8 @@ private:
 		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00},
 		{0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00}
 	};
+
+	uint8_t tempResultColumn[4] = { 0x00,0x00,0x00,0x00 };
 
 	const uint8_t forwardSBox[256] = { 
 		0x63,	0x7C,	0x77,	0x7B,	0xF2,	0x6B,	0x6F,	0xC5,	0x30,	0x01,	0x67,	0x2B,	0xFE,	0xD7,	0xAB,	0x76,
@@ -250,23 +267,26 @@ private:
 
 	void InitializeArrays()
 	{
-		for (int i = 0; i != 4; i++) {
-			for (int j = 0; j != 8; j++)
+		for (uint8_t i = 0; i != 4; i++) {
+			for (uint8_t j = 0; j != 8; j++)
 			{
 				initialKey[i][j] = 0x00;
 			}
 		}
-		for (int i = 0; i != 4; i++) {
-			for (int j = 0; j != 8; j++) {
-				for (int k = 0; k != 15; k++) {
+		for (uint8_t i = 0; i != 4; i++) {
+			for (uint8_t j = 0; j != 8; j++) {
+				for (uint8_t k = 0; k != 15; k++) {
 					initialAndExpandedKey[i][j][k] = 0x00;
 				}
 			}
 		}
-		for (int i = 0; i != 4; i++) {
-			for (int j = 0; j != 8; j++) {
+		for (uint8_t i = 0; i != 4; i++) {
+			for (uint8_t j = 0; j != 8; j++) {
 				state[i][j] = 0x00;
 			}
+		}
+		for (uint8_t i = 0; i != 4; i++) {
+			tempResultColumn[i] = 0x00;
 		}
 	};
 
@@ -292,5 +312,5 @@ private:
 
 	//Debug Functions
 	void printState();
-	void testAES();
+	void TestAES();
 };

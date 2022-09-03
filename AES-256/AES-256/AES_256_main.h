@@ -18,10 +18,10 @@ public:
 
 		InitializeArrays();
 
-		int x = 0;
-		for (int i = 0; i != 4; i++)
+		uint8_t x = 0;
+		for (uint8_t i = 0; i != 4; i++)
 		{
-			for (int j = 0; j != 8; j++)
+			for (uint8_t j = 0; j != 8; j++)
 			{
 				x = (i * 8) + j;
 				initialKey[i][j] = inputKey.at(x); //Copy Key bytes over to an Array for later manipulation
@@ -38,15 +38,15 @@ public:
 		GFLUTMap[0x0D] = 0x04;
 		GFLUTMap[0x0E] = 0x05;
 
-		//TestAES(); // AES Unit Test
+		TestAES(); // AES Unit Test
 
 		//Re expand the key because I screwed it up in the test above // fix this later
 		InitializeArrays();
 
 		x = 0;
-		for (int i = 0; i != 4; i++)
+		for (uint8_t i = 0; i != 4; i++)
 		{
-			for (int j = 0; j != 8; j++)
+			for (uint8_t j = 0; j != 8; j++)
 			{
 				x = (i * 8) + j;
 				initialKey[i][j] = inputKey.at(x); //Copy Key bytes over to an Array for later manipulation

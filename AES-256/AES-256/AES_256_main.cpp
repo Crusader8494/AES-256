@@ -53,8 +53,8 @@ void AES::DecryptNormalRound(uint8_t roundNumber)
 {
 	AES::SBoxState(true);
 	AES::ShiftRows(true);
-	AES::MixColumns(true);
 	AES::AddRoundKey(roundNumber);
+	AES::MixColumns(true);
 }
 
 void AES::DecryptFinalRound(uint8_t roundNumber)
